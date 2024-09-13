@@ -1,0 +1,159 @@
+1-
+SELECT e.Nome AS NomeEstadio, e.Capacidade, c.Nome AS NomeCidade 
+FROM Estadio e 
+JOIN Cidade c ON e.CodCidade = c.CodCidade 
+WHERE c.UF = 'A';
+
+2-
+SELECT cb.Nome AS NomeClube
+FROM Clube cb
+JOIN ClubeCampeonato cbc ON cb.CodClube = cbc.CodClube
+JOIN Campeonato c ON c.CodCampeonato = cbc.CodCampeonato 
+WHERE cbc.Ano = 2023 AND c.Descricao = ‘Campeonato Brasileiro’;
+
+3-
+SELECT DISTINCT cb.Nome AS NomeJogador
+FROM Jogador jg
+JOIN JogadorClubeCampeonato jgcbc ON jg.CodJogador = jcbc.CodJogador
+JOIN Clube cb ON jgcbc.CodClube = cb.CodClube
+WHERE jg.Nome = ‘Jogador 1’
+
+4-
+SELECT cb.Nome AS NomeClube, cbc.PONTOS AS NPontos
+FROM Clube cb
+JOIN ClubeCampeonato cbc ON cbc.CodClube = cb.CodClube
+JOIN Campeonato c ON c.CodCampeonato = cbc.CodCampeonato
+WHERE c.Descricao = 'Campeonato 1' AND cbc.Ano = 2021;
+
+5-
+SELECT jg.Nome AS NomeJogador, SUM(jgcbc.Gols) AS Gols
+FROM Jogador jg
+JOIN JogadorClubeCampeonato jgcbc ON jg.CodJogador = jgcbc.CodJogador
+JOIN ClubeCampeonato cbc ON jgcbc.CodClube = cbc.CodClube AND cbc.Ano = jgcbc.Ano AND cbc.CodCampeonato = jgcbc.CodCampeonato
+JOIN Clube cb ON cbc.CodClube = cb.CodClube
+JOIN Campeonato c ON c.codCampeonato = cbc.codCampeonato
+WHERE cb.Nome = 'Clube 4' AND jgcbc.Ano = 2023
+
+6-
+SELECT c.Descricao
+FROM Campeonato c
+JOIN ClubeCampeonato cbc ON cbc.CodCampeonato = c.CodCampeonato
+JOIN Clube cb ON cbc.CodClube = cb.CodClube
+WHERE cb.Nome = 'Clube 1' AND cbc.Ano = 2022
+
+7-
+SELECT cb.Nome, COUNT(p.CodPartida) AS QuantidadePartidas
+FROM Clube cb
+JOIN Cidade c ON c.CodCidade = cb.CodCidade
+JOIN Partida p ON p.CodClube2 = cb.CodClube OR p.CodClube1 = cb.CodClube
+WHERE c.UF = 'A' AND p.Ano = 2023
+GROUP BY cb.Nome;
+
+8-
+SELECT c.Nome AS Cidade, COUNT(cb.CodClube) AS NClubes, COUNT(e.CodEstadio) AS NEstadios
+FROM Cidade c
+JOIN Clube cb ON cb.CodCidade = c.CodCidade
+LEFT JOIN Estadio e ON c.CodCidade = e.CodCidade
+GROUP BY c.Nome;
+
+9-
+WITH SomaValores AS (
+    SELECT jgcbc.CodJogador, SUM(DISTINCT jg.ValorPasse) AS ValorPasse
+    FROM Jogador jg
+    JOIN JogadorClubeCampeonato jgcbc ON jg.CodJogador = jgcbc.CodJogador
+    JOIN ClubeCampeonato cbc ON jgcbc.CodClube = cbc.CodClube AND jgcbc.CodCampeonato = cbc.CodCampeonato AND jgcbc.Ano = cbc.Ano
+    JOIN Clube cb ON cbc.CodClube = cb.CodClube
+    JOIN Cidade c ON cb.CodCidade = c.CodCidade
+    WHERE c.UF = 'A' AND jgcbc.Ano = 2023
+    GROUP BY jgcbc.CodJogador
+    ORDER BY jgcbc.CodJogador ASC
+)
+SELECT CodJogador, ValorPasse
+FROM SomaValores
+UNION ALL
+SELECT 'TOTAL' AS CodJogador, SUM(ValorPasse) AS ValorPasse 
+FROM SomaValores;
+
+10-
+SELECT c.UF, cb.Nome, COUNT(DISTINCT jgcbc.CodJogador)
+FROM Cidade c
+JOIN Clube cb ON c.CodCidade = cb.CodCidade
+JOIN ClubeCampeonato cbc ON cb.CodClube = cbc.CodClube
+JOIN JogadorClubeCampeonato jgcbc ON cbc.CodClube = jgcbc.CodClube AND cbc.CodCampeonato = jgcbc.CodCampeonato AND cbc.Ano = jgcbc.Ano
+WHERE cbc.Ano = 2022
+GROUP BY c.UF, cb.Nome;
+
+11- 
+SELECT cb.Nome, AVG(jg.valorPasse)
+FROM Clube cb
+JOIN ClubeCampeonato cbc ON cbc.CodClube = cb.CodClube
+JOIN Campeonato cp ON cp.CodCampeonato = cbc.CodCampeonato
+JOIN JogadorClubeCampeonato jgcbc ON jgcbc.CodClube = cbc.CodClube AND jgcbc.CodCampeonato = cbc.CodCampeonato AND jgcbc.Ano = cbc.Ano
+JOIN Jogador jg ON jg.CodJogador = jgcbc.CodJogador
+WHERE cp.Descricao = "CAMPEONATO 2"
+GROUP BY cb.Nome;
+
+12-
+SELECT p.Ano, p.DataHora, e.Nome, p.CodClube1, p.CodClube2, p.GolsClube1, p.GolsClube2
+FROM Partida p 
+JOIN Clube cb ON (cb.CodClube = p.CodClube1 OR cb.CodClube = p.CodClube2) AND (cb.CodClube = p.CodClube1 AND p.GolsClube1 > p.GolsClube2) OR (cb.CodClube = p.CodClube2 AND p.GolsClube2 > p.GolsClube1)
+JOIN Estadio e ON e.CodEstadio = p.CodEstadio
+JOIN Campeonato cp ON cp.CodCampeonato = p.CodCampeonato
+WHERE cb.Nome = 'Clube 2' AND  e.Nome = 'ESTADIO 2' AND cp.Descricao = 'CAMPEONATO 1' AND p.Ano = 2023;
+
+13- 
+WITH Pontuacao AS (
+  SELECT cb.Nome, cbc.Pontos
+  FROM Clube cb
+  JOIN ClubeCampeonato cbc ON cbc.CodClube = cb.CodClube
+  JOIN Campeonato c ON c.CodCampeonato = cbc.CodCampeonato
+  WHERE cb.Nome IN ('Clube 2', 'Clube 3') AND c.Descricao = 'Campeonato 1' AND cbc.Ano = 2022
+  )
+SELECT Nome, Pontos
+FROM Pontuacao
+UNION ALL
+SELECT 'São Iguais', 
+  CASE WHEN MAX(Pontos) = MIN(Pontos)
+    THEN 'SIM' 
+    ELSE 'NÂO' 
+  END AS Resultado
+FROM Pontuacao;
+
+14-
+WITH 
+  TimeDados AS (
+    SELECT cb.Nome AS ClubeNome, c.Nome AS CidadeNome
+    FROM Clube cb
+    JOIN Cidade c ON c.CodCidade = cb.CodCidade
+    WHERE cb.nome = 'Clube 4'
+    ),
+  JogadoresDados AS (
+    SELECT jg.CodJogador, jg.Nome AS JogadorNome, jg.DataNascimento, jg.ValorPasse
+    FROM Jogador jg
+    JOIN JogadorClubeCampeonato jgcbc ON jgcbc.CodJogador = jg.CodJogador
+    JOIN ClubeCampeonato cbc ON cbc.CodClube = jgcbc.CodClube AND cbc.CodCampeonato = jgcbc.CodCampeonato AND cbc.Ano = jgcbc.Ano
+    JOIN Clube cb ON cb.CodClube = cbc.CodClube
+    JOIN Campeonato cp ON cp.CodCampeonato = cbc.CodCampeonato
+    WHERE cb.Nome = 'Clube 4' AND cp.Descricao = 'Campeonato 2' AND cbc.Ano = 2023
+  )
+
+SELECT CodJogador, JogadorNome, DataNascimento, valorPasse
+FROM JogadoresDados
+UNION ALL
+SELECT 'Clube' AS CodJogador, ClubeNome AS JogadorNome, 'Cidade' AS DataNascimento, CidadeNome AS valorPasse
+FROM TimeDados;
+
+
+15-
+WITH Campeonato2023 AS (
+  SELECT cb.Nome AS ClubeNome, COUNT(cbc.CodCampeonato) AS QCampeonato2023
+  FROM Clube cb
+  LEFT JOIN ClubeCampeonato cbc ON cb.CodClube = cbc.CodClube AND cbc.Ano = 2023
+  GROUP BY cb.Nome
+)
+
+SELECT cb.Nome AS CLUBE, COUNT(cbc.CodCampeonato) AS '2022', QCampeonato2023 AS '2023' 
+FROM Campeonato2023
+JOIN Clube cb ON cb.Nome = ClubeNome 
+LEFT JOIN ClubeCampeonato cbc ON cb.CodClube = cbc.CodClube AND cbc.Ano = 2022
+GROUP BY cb.Nome;
